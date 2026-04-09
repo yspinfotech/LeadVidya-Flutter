@@ -285,9 +285,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> with SingleTicker
   }
 
   Widget _buildEmptyState(String message, {String? subtitle}) {
-    return Center(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
+      child: Center(
+        child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.history_rounded, size: 64, color: AppTheme.divider),
@@ -307,6 +308,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> with SingleTicker
           ],
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
