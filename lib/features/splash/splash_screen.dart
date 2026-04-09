@@ -26,54 +26,83 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Placeholder for logo
-            Container(
-              width: 120,
-              height: 120,
+      backgroundColor: const Color(0xFF0F172A), // Dark Navy for Auth/Splash entry
+      body: Stack(
+        children: [
+          // Background ornaments
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).primaryColor.withOpacity(0.5),
-                    blurRadius: 30,
-                    spreadRadius: 5,
+                shape: BoxShape.circle,
+                color: AppTheme.primary.withOpacity(0.05),
+              ),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Premium Logo Container
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(40),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withOpacity(0.2),
+                        blurRadius: 40,
+                        spreadRadius: 10,
+                      ),
+                    ],
+                    border: Border.all(color: AppTheme.primary.withOpacity(0.2), width: 1.5),
                   ),
-                ],
-              ),
-              child: const Icon(
-                Icons.electric_bolt_rounded,
-                size: 60,
-                color: Colors.white,
-              ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.electric_bolt_rounded,
+                      size: 70,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                const Text(
+                  'LeadVidya',
+                  style: TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Sales CRM Mobile',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.6),
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 60),
+                const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 32),
-            const Text(
-              'LeadVidya',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Sales CRM Mobile',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white54,
-              ),
-            ),
-            const SizedBox(height: 48),
-            const CircularProgressIndicator(
-              strokeWidth: 3,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -1,212 +1,254 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
-import '../../services/call_log_service.dart';
-import '../../core/api/api_client.dart';
+import '../../core/widgets/glass_card.dart';
+import 'analytics_provider.dart';
 import 'package:intl/intl.dart';
 
-class CallAnalyticsScreen extends StatefulWidget {
+class CallAnalyticsScreen extends ConsumerStatefulWidget {
   const CallAnalyticsScreen({super.key});
 
   @override
-  State<CallAnalyticsScreen> createState() => _CallAnalyticsScreenState();
+  ConsumerState<CallAnalyticsScreen> createState() => _CallAnalyticsScreenState();
 }
 
-class _CallAnalyticsScreenState extends State<CallAnalyticsScreen> {
-  late CallLogService _callLogService;
-  dynamic _metrics;
-  bool _isLoading = true;
-  DateTimeRange _dateRange = DateTimeRange(
-    start: DateTime.now().subtract(const Duration(days: 7)),
-    end: DateTime.now(),
-  );
-
+class _CallAnalyticsScreenState extends ConsumerState<CallAnalyticsScreen> {
   @override
   void initState() {
     super.initState();
-    _callLogService = CallLogService(ApiClient());
-    _fetchMetrics();
-  }
-
-  Future<void> _fetchMetrics() async {
-    setState(() => _isLoading = true);
-    try {
-      final start = DateFormat('yyyy-MM-dd').format(_dateRange.start);
-      final end = DateFormat('yyyy-MM-dd').format(_dateRange.end);
-      final data = await _callLogService.getCallReports(start: start, end: end);
-      setState(() {
-        _metrics = data['metrics'];
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(analyticsProvider.notifier).fetchReports();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(analyticsProvider);
+
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Performance', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _selectDateRange,
-            icon: const Icon(Icons.calendar_month_rounded, color: AppTheme.primary),
-          ),
-          const SizedBox(width: 8),
-        ],
+        title: const Text('Call Insights', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildDateLabel(),
-              const SizedBox(height: 24),
-              _buildMetricGrid(),
-              const SizedBox(height: 32),
-              _buildTrafficSection('Inbound Traffic', _metrics?['incomingCalls']),
-              const SizedBox(height: 24),
-              _buildTrafficSection('Outbound Traffic', _metrics?['outgoingCalls']),
-            ],
-          ),
-    );
-  }
-
-  Widget _buildDateLabel() {
-    final f = DateFormat('MMM dd, yyyy');
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      body: Column(
         children: [
-          const Icon(Icons.history_toggle_off_rounded, size: 16, color: AppTheme.textSecondary),
-          const SizedBox(width: 8),
-          Text(
-            '${f.format(_dateRange.start)} - ${f.format(_dateRange.end)}',
-            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetricGrid() {
-    final overview = _metrics?['callOverview'] ?? {};
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 1.5,
-      children: [
-        _buildMetricCard('Total Calls', overview['totalCalls']?.toString() ?? '0', Icons.call_rounded, AppTheme.primary),
-        _buildMetricCard('Connected', overview['totalConnected']?.toString() ?? '0', Icons.phone_callback_rounded, AppTheme.success),
-        _buildMetricCard('Unique Leads', overview['uniqueCalls']?.toString() ?? '0', Icons.person_search_rounded, AppTheme.accent),
-        _buildMetricCard('Avg Duration', overview['avgCallDuration'] ?? '0s', Icons.timer_rounded, AppTheme.warning),
-      ],
-    );
-  }
-
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: color),
-              const Spacer(),
-              const Icon(Icons.arrow_upward_rounded, size: 14, color: AppTheme.success),
-            ],
-          ),
-          const Spacer(),
-          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          Text(title, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTrafficSection(String title, dynamic traffic) {
-    if (traffic == null) return const SizedBox();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppTheme.card,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(
-            children: [
-              _buildTrafficRow('Total', traffic['totalIncoming']?.toString() ?? traffic['totalOutgoing']?.toString() ?? '0'),
-              const Divider(height: 24, color: Colors.white10),
-              _buildTrafficRow('Connected', traffic['incomingConnected']?.toString() ?? traffic['outgoingConnected']?.toString() ?? '0', isSuccess: true),
-              const Divider(height: 24, color: Colors.white10),
-              _buildTrafficRow('Missed / No Ans', traffic['incomingUnanswered']?.toString() ?? traffic['outgoingUnanswered']?.toString() ?? '0', isDanger: true),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTrafficRow(String label, String value, {bool isSuccess = false, bool isDanger = false}) {
-    return Row(
-      children: [
-        Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
-        const Spacer(),
-        Text(
-          value, 
-          style: TextStyle(
-            fontWeight: FontWeight.bold, 
-            fontSize: 16,
-            color: isSuccess ? AppTheme.success : (isDanger ? AppTheme.danger : Colors.white),
-          )
-        ),
-      ],
-    );
-  }
-
-  Future<void> _selectDateRange() async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2023),
-      lastDate: DateTime.now(),
-      initialDateRange: _dateRange,
-      builder: (context, child) {
-        return Theme(
-          data: AppTheme.darkTheme.copyWith(
-            colorScheme: AppTheme.darkTheme.colorScheme.copyWith(
-              primary: AppTheme.primary,
-              onPrimary: Colors.white,
-              surface: AppTheme.surface,
-              onSurface: Colors.white,
+          _buildFilterBar(state),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => ref.read(analyticsProvider.notifier).fetchReports(),
+              child: state.isLoading 
+                ? _buildSkeleton()
+                : state.metrics == null 
+                  ? _buildEmptyState()
+                  : _buildAnalyticsContent(state.metrics),
             ),
           ),
-          child: child!,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterBar(AnalyticsState state) {
+    return Container(
+      height: 70,
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          _buildFilterChip('today', 'Today', state),
+          _buildFilterChip('yesterday', 'Yesterday', state),
+          _buildFilterChip('custom', 'Custom', state, icon: Icons.calendar_today_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String filter, String label, AnalyticsState state, {IconData? icon}) {
+    final active = state.dateFilter == filter;
+    String displayLabel = label;
+    if (filter == 'custom' && active) {
+      displayLabel = '${DateFormat('MMM dd').format(state.startDate)} - ${DateFormat('MMM dd').format(state.endDate)}';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: () async {
+          if (filter == 'custom') {
+            final picked = await showDateRangePicker(
+              context: context,
+              firstDate: DateTime(2023),
+              lastDate: DateTime.now(),
+              initialDateRange: DateTimeRange(start: state.startDate, end: state.endDate),
+            );
+            if (picked != null) {
+              ref.read(analyticsProvider.notifier).setFilter('custom', start: picked.start, end: picked.end);
+            }
+          } else {
+            ref.read(analyticsProvider.notifier).setFilter(filter);
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: active ? AppTheme.primary.withOpacity(0.1) : AppTheme.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: active ? AppTheme.primary : AppTheme.border),
+          ),
+          child: Row(
+            children: [
+              if (icon != null) ...[Icon(icon, size: 14, color: active ? AppTheme.primaryDark : AppTheme.textMuted), const SizedBox(width: 8)],
+              Text(
+                displayLabel,
+                style: TextStyle(
+                  color: active ? AppTheme.primaryDark : AppTheme.textSecondary,
+                  fontWeight: active ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsContent(dynamic metrics) {
+    final overview = metrics['callOverview'] ?? {};
+    final incoming = metrics['incomingCalls'] ?? {};
+    final outgoing = metrics['outgoingCalls'] ?? {};
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildSectionHeader('Performance Overview', Icons.bolt_rounded, AppTheme.primary),
+        const SizedBox(height: 12),
+        _buildMetricGrid([
+          _MetricData('Total Calls', overview['totalCalls'], Icons.call_rounded, AppTheme.primary),
+          _MetricData('Unique Leads', overview['uniqueCalls'], Icons.person_rounded, AppTheme.primary),
+          _MetricData('Total Time', overview['totalCallTime'], Icons.access_time_filled_rounded, AppTheme.accent),
+          _MetricData('Avg Duration', overview['avgCallDuration'], Icons.speed_rounded, AppTheme.warning),
+          _MetricData('Connected', overview['totalConnected'], Icons.check_circle_rounded, AppTheme.success),
+        ]),
+        const SizedBox(height: 32),
+        _buildSectionHeader('Inbound Traffic', Icons.phone_callback_rounded, AppTheme.success),
+        const SizedBox(height: 12),
+        _buildMetricGrid([
+          _MetricData('Total Incoming', incoming['totalIncoming'], Icons.phone_callback_rounded, AppTheme.success),
+          _MetricData('Connected', incoming['incomingConnected'], Icons.check_circle_rounded, AppTheme.success),
+          _MetricData('Missed', incoming['incomingUnanswered'], Icons.cancel_rounded, AppTheme.danger),
+          _MetricData('Avg Duration', incoming['avgIncomingDuration'], Icons.timer_rounded, AppTheme.textSecondary),
+        ]),
+        const SizedBox(height: 32),
+        _buildSectionHeader('Outbound Traffic', Icons.phone_forwarded_rounded, AppTheme.accent),
+        const SizedBox(height: 12),
+        _buildMetricGrid([
+          _MetricData('Total Outgoing', outgoing['totalOutgoing'], Icons.phone_forwarded_rounded, AppTheme.accent),
+          _MetricData('Connected', outgoing['outgoingConnected'], Icons.check_circle_rounded, AppTheme.success),
+          _MetricData('No Answer', outgoing['outgoingUnanswered'], Icons.cancel_rounded, AppTheme.danger),
+          _MetricData('Avg Duration', outgoing['avgOutgoingDuration'], Icons.timer_rounded, AppTheme.textSecondary),
+        ]),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 8),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textPrimary)),
+      ],
+    );
+  }
+
+  Widget _buildMetricGrid(List<_MetricData> metrics) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: metrics.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.6,
+      ),
+      itemBuilder: (context, index) {
+        final m = metrics[index];
+        return GlassCard(
+          padding: const EdgeInsets.all(12),
+          borderRadius: 16,
+          color: Colors.white,
+          border: Border.all(color: AppTheme.border),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(color: m.color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                    child: Icon(m.icon, color: m.color, size: 16),
+                  ),
+                  const Icon(Icons.trending_up, color: AppTheme.success, size: 14),
+                ],
+              ),
+              Text(
+                m.value?.toString() ?? '0',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppTheme.textPrimary),
+              ),
+              Text(
+                m.label,
+                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         );
       },
     );
-    if (picked != null) {
-      setState(() => _dateRange = picked);
-      _fetchMetrics();
-    }
   }
+
+  Widget _buildSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 3,
+      itemBuilder: (context, i) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(width: 150, height: 20, color: AppTheme.divider, margin: const EdgeInsets.only(bottom: 12)),
+          _buildMetricGrid(List.generate(4, (_) => _MetricData('', '...', Icons.circle, AppTheme.divider))),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.bar_chart_rounded, size: 64, color: AppTheme.divider),
+          const SizedBox(height: 16),
+          const Text('No Analytics Data', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textSecondary)),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricData {
+  final String label;
+  final dynamic value;
+  final IconData icon;
+  final Color color;
+  _MetricData(this.label, this.value, this.icon, this.color);
 }
