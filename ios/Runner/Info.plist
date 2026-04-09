@@ -45,5 +45,25 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>mailto</string>
+		<string>sms</string>
+		<string>whatsapp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>LeadVidya requires camera access to capture lead documents and profile photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>LeadVidya requires microphone access for call recording and voice notes.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>LeadVidya requires photo library access to upload lead documents.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 </dict>
 </plist>

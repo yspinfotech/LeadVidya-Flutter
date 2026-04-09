@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'dart:io';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../models/call_log_model.dart';
@@ -138,6 +139,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> with SingleTicker
             onRefresh: () => ref.read(localHistoryProvider.notifier).fetchLocalLogs(),
             child: localLogsState.when(
               data: (logs) {
+                if (!Platform.isAndroid) {
+                  return _buildEmptyState(
+                    'Device logs are unavailable on iOS',
+                    subtitle: 'Apple protects privacy by restricting third-party access to the system call history. Please use the LEADS tab for CRM-tracked history.',
+                  );
+                }
                 if (logs.isEmpty) return _buildEmptyState('No device call logs found');
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -277,14 +284,27 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> with SingleTicker
     );
   }
 
-  Widget _buildEmptyState(String message) {
+  Widget _buildEmptyState(String message, {String? subtitle}) {
     return Center(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.history_rounded, size: 64, color: AppTheme.divider),
           const SizedBox(height: 16),
-          Text(message, style: const TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.bold)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.bold),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+            ),
+          ],
         ],
       ),
     );

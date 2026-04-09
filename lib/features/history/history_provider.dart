@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:call_log/call_log.dart' as cl;
+import 'dart:io';
 import '../../core/api/api_client.dart';
 import '../../models/call_log_model.dart';
 import '../../services/call_log_service.dart';
@@ -46,6 +47,12 @@ class LocalHistoryNotifier extends StateNotifier<AsyncValue<List<CallLogModel>>>
   Future<void> fetchLocalLogs() async {
     try {
       state = const AsyncValue.loading();
+      
+      if (!Platform.isAndroid) {
+        state = const AsyncValue.data([]);
+        return;
+      }
+
       final Iterable<cl.CallLogEntry> entries = await cl.CallLog.get();
       
       final logs = entries.map((e) => CallLogModel(
@@ -55,7 +62,7 @@ class LocalHistoryNotifier extends StateNotifier<AsyncValue<List<CallLogModel>>>
         timestamp: e.timestamp ?? 0,
         duration: e.duration ?? 0,
         type: _mapLocalType(e.callType),
-        simSlot: 0, // call_log doesn't easily expose SIM slot on all versions
+        simSlot: 0,
       )).toList();
 
       state = AsyncValue.data(logs);
