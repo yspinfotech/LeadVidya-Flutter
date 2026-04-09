@@ -49,8 +49,9 @@ class LeadsService {
     return Lead.fromJson(data);
   }
 
-  Future<void> createLead(Map<String, dynamic> data) async {
-    await _apiClient.post('/leads', data: data);
+  Future<bool> createLead(Map<String, dynamic> data) async {
+    final response = await _apiClient.post('/leads', data: data);
+    return response.data['success'] == true || response.statusCode == 200 || response.statusCode == 201;
   }
 
   Future<List<Lead>> searchLeads(String query) async {

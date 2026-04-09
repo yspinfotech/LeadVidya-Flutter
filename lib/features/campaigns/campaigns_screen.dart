@@ -103,7 +103,7 @@ class _CampaignsScreenState extends ConsumerState<CampaignsScreen> {
     final int count = campaign['assignedCount'] ?? campaign['totalLeads'] ?? 0;
 
     return Padding(
-      padding: const EdgeInsets.bottom(12.0),
+      padding: const EdgeInsets.only(bottom: 12.0),
       child: GlassCard(
         padding: const EdgeInsets.all(16),
         borderRadius: 20,

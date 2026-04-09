@@ -143,7 +143,7 @@ class _LeadDetailsScreenState extends ConsumerState<LeadDetailsScreen> with Sing
                 _buildDetailItem('Campaign', _lead?.campaignName ?? 'General', Icons.campaign_outlined),
                 _buildDetailItem('Lead Source', _lead?.leadSource ?? 'Manual', Icons.source_outlined),
                 _buildDetailItem('Expected Value', _lead?.expectedValue != null ? '₹${_lead!.expectedValue}' : '-', Icons.payments_outlined),
-                _buildDetailItem('Follow-up', _lead?.next_followup_date != null ? DateFormat('MMM dd, hh:mm a').format(_lead!.next_followup_date!) : 'Not Set', Icons.event_repeat_rounded),
+                _buildDetailItem('Follow-up', _lead?.nextFollowupDate != null ? DateFormat('MMM dd, hh:mm a').format(_lead!.nextFollowupDate!) : 'Not Set', Icons.event_repeat_rounded),
               ],
             ),
             const SizedBox(height: 24),

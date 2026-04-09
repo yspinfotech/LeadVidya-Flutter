@@ -232,7 +232,7 @@ class _LeadsScreenState extends ConsumerState<LeadsScreen> {
             padding: const EdgeInsets.all(16),
             builderDelegate: PagedChildBuilderDelegate<Lead>(
               itemBuilder: (context, item, index) => Padding(
-                padding: const EdgeInsets.bottom(12.0),
+                padding: const EdgeInsets.only(bottom: 12.0),
                 child: LeadCard(
                   lead: item,
                   onTap: () => context.push('/lead-details', extra: item),
